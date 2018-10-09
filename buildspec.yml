@@ -19,8 +19,8 @@ phases:
       - printf "%s:%s" "$REPOSITORY_URI" "$(cat /tmp/build_id.out)" > /tmp/build_tag.out
       - printf '{"tag":"%s"}' "$(cat /tmp/build_id.out)" > /tmp/build.json
       # App config is copied to S3 using "docker/push-config-s3.sh" script
-      - echo Retrieve app config from Amazon S3 template bucket ($TEMPLATE_BUCKET)...
-      - aws s3 cp s3://$TEMPLATE_BUCKET/config/.env laravel/.env
+      - echo "Retrieve app config from Amazon S3 template bucket ($TEMPLATE_BUCKET)..."
+      - aws s3 cp "s3://$TEMPLATE_BUCKET/config/.env" laravel/.env
       - echo APP_VERSION=$CODEBUILD_RESOLVED_SOURCE_VERSION >> laravel/.env
   build:
     commands:
