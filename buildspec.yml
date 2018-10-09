@@ -1,0 +1,38 @@
+version: 0.2
+
+# CodeBuild Environment Variables:
+# AWS_DEFAULT_REGION
+# us-east-1
+# REPOSITORY_URI
+# 123456789012.dkr.ecr.us-east-1.amazonaws.com/example-git-a1b2c3d4e5f6
+# TEMPLATE_BUCKET
+# example-s3-bucket-name
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws --version
+      - $(aws ecr get-login --region $AWS_DEFAULT_REGION --no-include-email)
+      #- printenv
+      - echo -n "$CODEBUILD_LOG_PATH" > /tmp/build_id.out
+      - printf "%s:%s" "$REPOSITORY_URI" "$(cat /tmp/build_id.out)" > /tmp/build_tag.out
+      - printf '{"tag":"%s"}' "$(cat /tmp/build_id.out)" > /tmp/build.json
+      # App config is copied to S3 using "docker/push-config-s3.sh" script
+      - echo Retrieve app config from Amazon S3 template bucket...
+      - aws s3 cp s3://$TEMPLATE_BUCKET/config/.env laravel/.env
+      - echo APP_VERSION=$CODEBUILD_RESOLVED_SOURCE_VERSION >> laravel/.env
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building the Docker image...          
+      - docker build --tag "$(cat /tmp/build_tag.out)" .
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing the Docker images...
+      - docker push "$(cat /tmp/build_tag.out)"
+artifacts:
+    files: /tmp/build.json
+    discard-paths: yes
+
